@@ -17,12 +17,12 @@
     "styled-components": "^5.1.1"
   },
   "scripts": {
-    "start": "npm run build && node ./build/backend/index.js",
+    "start": "node ./build/backend/index.js",
     "lint": "eslint ./src/**/**.js ./src/**/**.jsx",
     "build": "react-scripts build && babel ./src/backend -s both --plugins source-map-support --out-dir build/backend && babel ./src/shared -s both --plugins source-map-support --out-dir build/shared",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "start:app": "./script/start-watch.sh"
+    "start:watch": "./script/start-watch.sh"
   },
   "eslintConfig": {
     "extends": [
