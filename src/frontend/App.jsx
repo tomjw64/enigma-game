@@ -120,6 +120,10 @@ const RoleInfo = styled.div`
 const RoleMemberList = styled.p`
   margin: 0.2em 0.5em;
   flex: 1;
+
+  span {
+    font-weight: bold;
+  }
 `
 
 const RoleSelectControls = () => {
@@ -146,7 +150,7 @@ const RoleSelectControls = () => {
           return [GAME_ROLE.CALLER, GAME_ROLE.RECEIVER].map(role => {
             return (
               <RoleInfo>
-                <RoleMemberList>{team} {role}: {roleMembers(team, role).join(', ')}</RoleMemberList>
+                <RoleMemberList>{team} {role}: <span>{roleMembers(team, role).join(', ')}</span></RoleMemberList>
                 <InlineButton onClick={handleSetRole(team, role)}>{'>>'}</InlineButton>
               </RoleInfo>
             )
