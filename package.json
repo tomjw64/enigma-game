@@ -17,7 +17,7 @@
     "styled-components": "^5.1.1"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "npm run build && node ./build/backend/index.js",
     "lint": "eslint ./src/**/**.js ./src/**/**.jsx",
     "build": "react-scripts build && babel ./src/backend -s both --plugins source-map-support --out-dir build/backend && babel ./src/shared -s both --plugins source-map-support --out-dir build/shared",
     "test": "react-scripts test",
