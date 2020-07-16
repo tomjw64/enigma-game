@@ -125,6 +125,10 @@ class Game {
           this.teams[team].activeGuess = ['1', '1', '1']
           this.teams[team].activeGuessSubmitted = false
         }
+        if (this.roundCount === 1) {
+           // Intentionally force guess wrong the first round
+          this.teams[TEAM.BLUE].activeGuessSubmitted = true
+        }
       },
       'onRedRevealGuesses': () => {
         // Make guesses public and check correctness
@@ -147,6 +151,10 @@ class Game {
           this.teams[team].activeGuess = ['1', '1', '1']
           this.teams[team].activeGuessSubmitted = false
         }
+        if (this.roundCount === 1) {
+          // Intentionally force guess wrong the first round
+         this.teams[TEAM.RED].activeGuessSubmitted = true
+       }
       },
       'onBlueRevealGuesses': () => {
         // Make guesses public and check correctness

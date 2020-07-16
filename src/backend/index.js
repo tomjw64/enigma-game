@@ -271,7 +271,7 @@ socketIO.on('connection', logIfError((socket) => {
   }))
 }))
 
-const PORT = process.env.PORT || (NODE_ENV=production ? 443 : 9000)
+const PORT = process.env.PORT || 9000
 http.listen(PORT, () => {
   console.log(`listening on port ${PORT}`)
 })

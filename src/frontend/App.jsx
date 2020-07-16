@@ -115,15 +115,20 @@ const GameStateDisplay = () => {
 const RoleInfo = styled.div`
   display: flex;
   border: 1px solid ${COLOR.LIGHT};
-  flex: 1;
+  flex-grow: 1;
 `
 const RoleMemberList = styled.p`
   margin: 0.2em 0.5em;
-  flex: 1;
+  flex-grow: 1;
+  font-weight: bold;
+  min-width: 4rem;
+`
 
-  span {
-    font-weight: bold;
-  }
+const RoleSelectControlsWrapper = styled.div`
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
 `
 
 const RoleSelectControls = () => {
@@ -144,26 +149,43 @@ const RoleSelectControls = () => {
   }
 
   return (
-    <div id='role-select-controls' style={{display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between'}}>
+    <RoleSelectControlsWrapper>
       {
         flatten([TEAM.RED, TEAM.BLUE].map(team => {
           return [GAME_ROLE.CALLER, GAME_ROLE.RECEIVER].map(role => {
             return (
               <RoleInfo>
-                <RoleMemberList>{team} {role}: <span>{roleMembers(team, role).join(', ')}</span></RoleMemberList>
-                <InlineButton onClick={handleSetRole(team, role)}>{'>>'}</InlineButton>
+                <InlineButton onClick={handleSetRole(team, role)}>{team} {role}</InlineButton>
+                <RoleMemberList><span>{roleMembers(team, role).join(', ')}</span></RoleMemberList>
               </RoleInfo>
             )
           })
         }))
       }
       <RoleInfo>
-        <RoleMemberList>SPECTATOR: {roleMembers(TEAM.SPECTATORS, GAME_ROLE.CALLER).concat(roleMembers(TEAM.SPECTATORS, GAME_ROLE.RECEIVER)).join(', ')}</RoleMemberList>
-        <InlineButton onClick={handleSetRole(TEAM.SPECTATORS, GAME_ROLE.RECEIVER)}>{'>>'}</InlineButton>
+        <InlineButton onClick={handleSetRole(TEAM.SPECTATORS, GAME_ROLE.RECEIVER)}>SPECTATOR</InlineButton>
+        <RoleMemberList>{roleMembers(TEAM.SPECTATORS, GAME_ROLE.CALLER).concat(roleMembers(TEAM.SPECTATORS, GAME_ROLE.RECEIVER)).join(', ')}</RoleMemberList>
       </RoleInfo>
-    </div>
+    </RoleSelectControlsWrapper>
   )
 }
+
+const GuessFormInner = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+`
+
+const HintSelector = styled.div`
+  margin: 0.5rem;
+  label {
+    margin-right: 0.3rem;
+  }
+  select {
+    align-self: stretch;
+  }
+`
 
 const GuessForm = (props) => {
   const { state } = useContext(Context)
@@ -195,20 +217,20 @@ const GuessForm = (props) => {
     <>
     <span>Guessing for {revealing} team:</span>
     <form id='guess-form' onSubmit={submitGuess}>
-      <div style={{display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center'}}>
+      <GuessFormInner>
         {[0,1,2].map(i => {
           return (
-            <div style={{margin: '0.5rem', display: 'flex'}}>
-            <label style={{marginRight: '0.3rem'}}>Hint: {activeHint[i]}</label>
-            <select style={{alignSelf: 'stretch'}}value={activeGuess[i]} onChange={handleSelect(i)}>
+            <HintSelector>
+            <label>Hint: {activeHint[i]}</label>
+            <select value={activeGuess[i]} onChange={handleSelect(i)}>
               {[1,2,3,4].map(choice => {
                 return <option value={choice}>{choice}</option>
               })}
             </select>
-            </div>
+            </HintSelector>
           )
         })}
-      </div>
+      </GuessFormInner>
       <button>Submit</button>
     </form>
     </>
@@ -363,12 +385,23 @@ const StateControls = () => {
 
 const TeamWord = styled.p`
   font-size: 1.2rem;
-  flex: 1;
+  flex-grow: 1;
   border: 2px solid ${COLOR.LIGHT};
   text-align: center;
   margin: 0;
   white-space: nowrap;
   padding: 0.5em;
+`
+
+const TeamWordsTitle = styled.p`
+  font-size: 1.5rem;
+  color: ${COLOR.LIGHT};
+  margin: 0.5em;
+`
+
+const TeamWordWrapper = styled.div`
+  display: flex;
+  flex-wrap: wrap;
 `
 
 const TeamWords = (props) => {
@@ -381,14 +414,14 @@ const TeamWords = (props) => {
   if (shownTeam === myTeam || state?.gameState?.teams[shownTeam]?.targetWords != null) {
     return (
       <div className='team-words-known'>
-        <p style={{fontSize: '1.5rem', color: COLOR.LIGHT, margin: '0.5em'}}>My Team Words</p>
-        <div style={{display: 'flex', flexWrap: 'wrap'}}>
+        <TeamWordsTitle>My Team Words</TeamWordsTitle>
+        <TeamWordWrapper>
         {
           (state?.gameState?.teams[shownTeam]?.targetWords || ['?', '?', '?', '?']).map((word, i) => {
             return <TeamWord>{word === '?' ? '' : `${i+1}. `}{word}</TeamWord>
           })
         }
-        </div>
+        </TeamWordWrapper>
       </div>
     )
   } else {
@@ -412,14 +445,14 @@ const TeamWords = (props) => {
 
     return (
       <div className='team-words-unknown'>
-        <p style={{fontSize: '1.5rem', color: COLOR.LIGHT, margin: '0.5em'}}>{shownTeam} Team Past Hints</p>
-        <div style={{display: 'flex', flexWrap: 'wrap'}}>
+        <TeamWordsTitle>{shownTeam} Team Past Hints</TeamWordsTitle>
+        <TeamWordWrapper>
           {
             Object.entries(hintsForNumbers).map(([key, values]) => {
               return <TeamWord>{key}: {values.length > 0 ? values.join(', ') : '?'}</TeamWord>
             })
           }
-        </div>
+        </TeamWordWrapper>
       </div>
     )
   }
@@ -449,7 +482,7 @@ const Scoreboard = () => {
   return (
     <ScoreboardWrapper id='scoreboard'>
       <ScoreboardSection>
-        <ScoreboardSectionTitle>Errors:</ScoreboardSectionTitle>
+        <ScoreboardSectionTitle>Self Codes Incorrect:</ScoreboardSectionTitle>
         {
           [TEAM.RED, TEAM.BLUE].map(team => {
             console.log(state.gameState)
@@ -458,7 +491,7 @@ const Scoreboard = () => {
         }
       </ScoreboardSection>
       <ScoreboardSection>
-        <ScoreboardSectionTitle>Codes Cracked:</ScoreboardSectionTitle>
+        <ScoreboardSectionTitle>Rival Codes Cracked:</ScoreboardSectionTitle>
         {
           [TEAM.RED, TEAM.BLUE].map(team => {
             return <TeamColored team={team}>{state.gameState.teams[team].crackedCount}</TeamColored>
@@ -512,6 +545,10 @@ const CurrentActionCard = styled.div`
   }
 `
 
+const SimpleFlexExpand = styled.div`
+  flex-grow: 1;
+`
+
 const GameDisplay = () => {
   const { state } = useContext(Context)
 
@@ -533,9 +570,9 @@ const GameDisplay = () => {
           : (
             <>
             <RoleSelectControls />
-            <div style={{flex: 1}}>
+            <SimpleFlexExpand>
               <StateControls />
-            </div>
+            </SimpleFlexExpand>
             <Scoreboard />
             </>
           )
