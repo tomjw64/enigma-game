@@ -79,6 +79,10 @@ const Store = ({ children }) => {
     SOCKET.on('game_created', () => {
       SOCKET.emit('set_role', TEAM.SPECTATORS, GAME_ROLE.RECEIVER)
     })
+
+    SOCKET.on('reconnect', () => {
+      SOCKET.emit('try_reconnect')
+    })
   }, [])
 
   return (
@@ -485,7 +489,6 @@ const Scoreboard = () => {
         <ScoreboardSectionTitle>Self Codes Incorrect:</ScoreboardSectionTitle>
         {
           [TEAM.RED, TEAM.BLUE].map(team => {
-            console.log(state.gameState)
             return <TeamColored team={team}>{state.gameState.teams[team].errorCount}</TeamColored>
           })
         }

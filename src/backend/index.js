@@ -153,6 +153,9 @@ socketIO.on('connection', logIfError((socket) => {
     game.makeRole(team, role, socket.id)
     emitUpdateGame(currentGameCode(socket))
   }))
+  socket.on('try_reconnect', () => {
+    console.log('socket tried reconnect')
+  })
 
   /////////////////
   // IN GAME EVENTS
