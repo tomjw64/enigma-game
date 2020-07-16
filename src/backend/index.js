@@ -108,13 +108,22 @@ socketIO.on('connection', logIfError((socket) => {
   // ADMININISTRATIVE
   ///////////////////
   console.log('a user connected')
-  CONNECTED_USERS[socket.id] = { username: socket.id, gameRoomCode: null }
+  CONNECTED_USERS[socket.id] = { username: socket.id, gameRoomCode: null, reconnectCount: 0 }
   const socketLeaveGame = socketLeaveGameAction(socket)
 
   socket.on('disconnect', logIfError(() => {
-    socketLeaveGame()
     console.log(`user ${dbgSocket(socket)} disconnected`)
-    delete CONNECTED_USERS[socket.id]
+    const previousReconnectCount = CONNECTED_USERS[socket.id].reconnectCount
+    // Wait 10 minutes before removing the user for sure, since
+    // mobile browsers are really aggressive about closing the socket
+    setTimeout(() => {
+      if (CONNECTED_USERS[socket.id]?.reconnectCount == previousReconnectCount) {
+        // User has not reconnected since we setTimeout
+        socketLeaveGame()
+        delete CONNECTED_USERS[socket.id]
+      }
+    }, 600000)
+    
   }))
   socket.on('set_name', logIfError((username) => {
     CONNECTED_USERS[socket.id].username = username
@@ -154,7 +163,8 @@ socketIO.on('connection', logIfError((socket) => {
     emitUpdateGame(currentGameCode(socket))
   }))
   socket.on('try_reconnect', () => {
-    console.log('socket tried reconnect')
+    console.log(`user ${dbgSocket(socket)} reconnected`)
+    CONNECTED_USERS[socket.id].reconnectCount += 1
   })
 
   /////////////////
