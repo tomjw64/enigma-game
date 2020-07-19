@@ -4,6 +4,8 @@ const assert = require('assert').strict;
 
 const express = require('express')
 const app = express()
+const cookieParser = require('cookie-parser')
+const { parse: cookieParse } = require('cookie');
 const http = require('http').createServer(app)
 const socketIO = require('socket.io')(http)
 
@@ -19,14 +21,13 @@ const WORDS = fs.readFileSync(path.join(BUILD_DIR, '/words.txt'), { encoding: 'u
 console.log(`Loaded ${WORDS.length} words`)
 
 const GAMES = {}
-
+const SAVED_SESSIONS = {}
 const CONNECTED_USERS = {}
 
 const gameRoomCodeToSocketRoom = (gameRoomCode) => `game_${gameRoomCode}`
 
-const usernameOf = (socket) => CONNECTED_USERS[socket.id].username
-// const usernameFromId = (socketId) => socketId == null ? null : CONNECTED_USERS[socketId].username
-const currentGameCode = (socket) => CONNECTED_USERS[socket.id].gameRoomCode
+const usernameOf = (socket) => CONNECTED_USERS[socket.id]?.username
+const currentGameCode = (socket) => CONNECTED_USERS[socket.id]?.gameRoomCode
 const currentGame = (socket) => gameFromRoomCode(currentGameCode(socket))
 const gameFromRoomCode = (roomCode) => GAMES[roomCode]
 
@@ -71,7 +72,6 @@ const emitUpdateGame = (gameRoomCode) => {
 }
 
 const dbgSocket = (socket) => `(${socket.id}:${usernameOf(socket)})`
-// const dbgSocketId = (socketId) => `(${socketId}:${usernameFromId(socketId)})`
 
 const socketLeaveGameAction = (socket) => {
   return () => {
@@ -86,21 +86,59 @@ const socketLeaveGameAction = (socket) => {
   }
 }
 
-app.use(express.static(BUILD_DIR))
-app.get('/*', function (req, res) {
-  res.sendFile(path.join(BUILD_DIR, 'index.html'))
-})
-
 const logIfError = (func) => {
   return (...args) => {
     try {
       func(...args)
     } catch (error) {
       console.error(error.stack);
-      // console.error(error.name);
-      // console.error(error.message);
     }
   }
+}
+
+const tryAssumeSession = (socket, session) => {
+  if (session == null) {
+    // No session to recover
+    return false
+  }
+  const { team, role, socket: oldSocket, gameRoomCode: oldGameRoomCode } = session
+
+  if (CONNECTED_USERS[oldSocket.id] == null) {
+    // Old user data gone, can't recover session
+    return false
+  }
+
+  const oldUserData = CONNECTED_USERS[oldSocket.id]
+  const { gameRoomCode } = oldUserData
+
+  if (gameRoomCode !== oldGameRoomCode) {
+    throw new Error(`Old user data and old session data out of sync`)
+  }
+
+  const game = gameFromRoomCode(gameRoomCode)
+  if (game == null) {
+    // Game is gone, can't recover session
+    return false
+  }
+
+  // Remove old user data
+  CONNECTED_USERS[socket.id] = { ...oldUserData }
+  leaveCurrentGame(oldSocket)
+
+  // Join correct game socket room
+  const socketRoom = gameRoomCodeToSocketRoom(gameRoomCode)
+  socket.join(socketRoom)
+
+  // Join game
+  const assumeRoleSuccess = game.makeRole(team, role, socket.id)
+  if (!assumeRoleSuccess) {
+    // May have been rejected because caller position now taken
+    const assumeReceiverSuccess = game.makeRole(team, GAME_ROLE.RECEIVER, socket.id)
+    if (!assumeReceiverSuccess) {
+      throw new Error(`User should have been able to assume session but was not able to join any role`)
+    }
+  }
+  return true
 }
 
 socketIO.on('connection', logIfError((socket) => {
@@ -108,37 +146,77 @@ socketIO.on('connection', logIfError((socket) => {
   // ADMININISTRATIVE
   ///////////////////
   console.log('a user connected')
-  CONNECTED_USERS[socket.id] = { username: socket.id, gameRoomCode: null, reconnectCount: 0 }
+  CONNECTED_USERS[socket.id] = { username: socket.id, gameRoomCode: null }
   const socketLeaveGame = socketLeaveGameAction(socket)
+  const cookies = cookieParse(socket.handshake.headers.cookie)
+  const reconnectKey = cookies.reconnectKey
 
-  socket.on('disconnect', logIfError(() => {
-    console.log(`user ${dbgSocket(socket)} disconnected`)
-    const previousReconnectCount = CONNECTED_USERS[socket.id].reconnectCount
-    // Wait 10 minutes before removing the user for sure, since
-    // mobile browsers are really aggressive about closing the socket
+  const savedSession = SAVED_SESSIONS[reconnectKey]
+
+  if (savedSession != null) {
+    console.log(`existing session found for ${dbgSocket(socket)}`)
+    const success = tryAssumeSession(socket, savedSession)
+    if (success) {
+      const { gameRoomCode, socket: oldSocket } = savedSession
+      socketIO.to(socket.id).emit('assumed_session', { gameRoomCode, username: CONNECTED_USERS[oldSocket.id].username })
+      console.log(`${dbgSocket(socket)} successfully assumed session from ${dbgSocket(oldSocket)}`)
+      delete CONNECTED_USERS[oldSocket.id]
+      emitUpdateGame(gameRoomCode)
+    }
+  }
+
+
+  socket.on('disconnect', logIfError(() => {  
+    const gameRoomCode = currentGameCode(socket)  
+    const game = currentGame(socket)
+
+    if (reconnectKey == null || game == null) {
+      socketLeaveGame()
+      delete CONNECTED_USERS[socket.id]
+      return
+    }
+
+    const team = game.getTeam(socket.id)
+    const role = game.getRole(socket.id)
+
+    const instanceNo = (SAVED_SESSIONS[reconnectKey]?.instanceNo || 0) + 1
+
+    // The user was in a game and has a cookie. We can revive the session if they reconnect
+    SAVED_SESSIONS[reconnectKey] = { team, role, gameRoomCode, socket, instanceNo: instanceNo }
     setTimeout(() => {
-      if (CONNECTED_USERS[socket.id]?.reconnectCount == previousReconnectCount) {
-        // User has not reconnected since we setTimeout
-        socketLeaveGame()
-        delete CONNECTED_USERS[socket.id]
+      // if (CONNECTED_USERS[socket.id]?.reconnectCount === previousReconnectCount) {
+        // User has not reconnected
+      socketLeaveGame()
+      console.log(`user ${dbgSocket(socket)} data being wiped`)
+      delete CONNECTED_USERS[socket.id]
+      // Only remove saved session if this is the same disconnect that caused the session to be saved
+      if (SAVED_SESSIONS[reconnectKey]?.instanceNo === instanceNo) {
+        delete SAVED_SESSIONS[reconnectKey]
       }
-    }, 600000)
-    
+      // }
+    }, 1200000)
+    console.log(`user ${dbgSocket(socket)} disconnected`)
   }))
   socket.on('set_name', logIfError((username) => {
     CONNECTED_USERS[socket.id].username = username
     console.log(`user ${dbgSocket(socket)} set name: ${username}`)
     emitUpdateGame(currentGameCode(socket))
   }))
-  socket.on('join_game', logIfError((gameRoomCode) => {
+  socket.on('ensure_join_game', logIfError((gameRoomCode) => {
+    const existingGame = gameFromRoomCode(gameRoomCode)
+
+    if (existingGame != null && existingGame.getTeam(socket.id) != null && existingGame.getRole(socket.id) != null) {
+      // socket has already joined game
+      return
+    }
+
     socketLeaveGame()
     console.log(`user ${dbgSocket(socket)} joined game: ${gameRoomCode}`)
     const socketRoom = gameRoomCodeToSocketRoom(gameRoomCode)
     socket.join(socketRoom)
     console.log(`user ${dbgSocket(socket)} joined room: ${socketRoom}`)
     CONNECTED_USERS[socket.id].gameRoomCode = gameRoomCode
-
-    const existingGame = gameFromRoomCode(gameRoomCode)
+    
     if (existingGame != null) {
       existingGame.makeReceiver(TEAM.SPECTATORS, socket.id)
     }
@@ -162,10 +240,6 @@ socketIO.on('connection', logIfError((socket) => {
     game.makeRole(team, role, socket.id)
     emitUpdateGame(currentGameCode(socket))
   }))
-  socket.on('try_reconnect', () => {
-    console.log(`user ${dbgSocket(socket)} reconnected`)
-    CONNECTED_USERS[socket.id].reconnectCount += 1
-  })
 
   /////////////////
   // IN GAME EVENTS
@@ -283,6 +357,19 @@ socketIO.on('connection', logIfError((socket) => {
     emitUpdateGame(currentGameCode(socket))
   }))
 }))
+
+app.use(cookieParser())
+app.use(function (req, res, next) {
+  const cookieName = 'reconnectKey'
+  const cookie = req.cookies[cookieName]
+  const cookieValue = cookie == null ? `reconnect_${Math.random().toString().substring(2)}` : cookie
+  res.cookie(cookieName, cookieValue, { maxAge: 3600000, httpOnly: true })
+  next()
+})
+app.use(express.static(BUILD_DIR))
+app.get('/*', function (req, res) {
+  res.sendFile(path.join(BUILD_DIR, 'index.html'))
+})
 
 const PORT = process.env.PORT || 9000
 http.listen(PORT, () => {

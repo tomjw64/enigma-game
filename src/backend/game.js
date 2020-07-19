@@ -285,21 +285,23 @@ class Game {
   }
   makeCaller(team, socketId) {
     if (this.teams[team].caller != null) {
-      return
+      return false
     }
     this.leaveAllTeams(socketId)
     this.teams[team].caller = socketId
+    return true
   }
   makeReceiver(team, socketId) {
     if (this.isReceiverOf(team, socketId)) {
-      return
+      return false
     }
     this.leaveAllTeams(socketId)
     this.teams[team].receivers.push(socketId)
+    return true
   }
   makeRole(team, role, socketId) {
     const funcSwitch = { [GAME_ROLE.CALLER]: this.makeCaller.bind(this), [GAME_ROLE.RECEIVER]: this.makeReceiver.bind(this) }
-    funcSwitch[role](team, socketId)
+    return funcSwitch[role](team, socketId)
   }
   asSanitized(team, role, nameStore, allPublic) {
     const sanitizedTeams = {}

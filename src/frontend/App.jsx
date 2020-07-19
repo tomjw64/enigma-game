@@ -64,11 +64,11 @@ const Reducer = (state, action) => {
 
 const initialState = {
   username: `auto_${Math.random().toString(36).substring(2).toUpperCase()}`,
-  joinedGameCodeCode: null,
+  joinedGameCode: null,
   gameState: null,
 }
 
-const Store = ({ children }) => {
+const Store = withRouter(({ history, children }) => {
   const [state, dispatch] = useReducer(Reducer, initialState)
 
   useEffect(() => {
@@ -80,8 +80,10 @@ const Store = ({ children }) => {
       SOCKET.emit('set_role', TEAM.SPECTATORS, GAME_ROLE.RECEIVER)
     })
 
-    SOCKET.on('reconnect', () => {
-      SOCKET.emit('try_reconnect')
+    SOCKET.on('assumed_session', (data) => {
+      const { username, gameRoomCode } = data
+      dispatch({ type: 'SET_NAME', payload: username })
+      history.push(`/game/${gameRoomCode}`)
     })
   }, [])
 
@@ -90,7 +92,7 @@ const Store = ({ children }) => {
       {children}
     </Context.Provider>
   )
-}
+})
 
 const Context = createContext(initialState)
 
@@ -603,7 +605,7 @@ const GameRoom = (props) => {
     if (state.joinedGameCode === gameRoomCode) {
       return
     }
-    SOCKET.emit('join_game', gameRoomCode)
+    SOCKET.emit('ensure_join_game', gameRoomCode)
     dispatch({ type: 'SET_JOINED_GAME', payload: gameRoomCode })
   }, [state.joinedGameCode, gameRoomCode, dispatch])
 
