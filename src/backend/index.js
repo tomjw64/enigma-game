@@ -112,7 +112,8 @@ const tryAssumeSession = (socket, session) => {
   const { gameRoomCode } = oldUserData
 
   if (gameRoomCode !== oldGameRoomCode) {
-    throw new Error(`Old user data and old session data out of sync`)
+    // Old user data and old session data out of sync, maybe different room?
+    return false
   }
 
   const game = gameFromRoomCode(gameRoomCode)

@@ -82,8 +82,8 @@ const Store = withRouter(({ history, children }) => {
 
     SOCKET.on('assumed_session', (data) => {
       const { username, gameRoomCode } = data
-      dispatch({ type: 'SET_NAME', payload: username })
       history.push(`/game/${gameRoomCode}`)
+      dispatch({ type: 'SET_NAME', payload: username })
     })
   }, [])
 
