@@ -156,12 +156,14 @@ socketIO.on('connection', logIfError((socket) => {
   if (savedSession != null) {
     console.log(`existing session found for ${dbgSocket(socket)}`)
     const success = tryAssumeSession(socket, savedSession)
+    const { gameRoomCode, socket: oldSocket } = savedSession
     if (success) {
-      const { gameRoomCode, socket: oldSocket } = savedSession
       socketIO.to(socket.id).emit('assumed_session', { gameRoomCode, username: CONNECTED_USERS[oldSocket.id].username })
       console.log(`${dbgSocket(socket)} successfully assumed session from ${dbgSocket(oldSocket)}`)
       delete CONNECTED_USERS[oldSocket.id]
       emitUpdateGame(gameRoomCode)
+    } else {
+      console.log(`${dbgSocket(socket)} could not assume session from ${dbgSocket(oldSocket)}`)
     }
   }
 
