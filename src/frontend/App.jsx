@@ -686,6 +686,7 @@ const InlineButton = styled.button`
   padding: 0.2em 0.5em;
   color: ${COLOR.DARK};
   min-width: 3em;
+  white-space: nowrap;
 `
 
 const HeaderToggle = styled.div`
@@ -744,7 +745,7 @@ const Landing = withRouter(({ history }) => {
             <HeaderInlineFormLabel for='name-change-input'>Welcome to Enigma, Agent</HeaderInlineFormLabel>
             <HeaderInlineFormInputContainer>
               <HeaderInlineFormInput type='text' id='name-change-input' value={nameInputValue} onChange={(event) => setNameInputValue(event.target.value)} />
-              <InlineButton style={{ height: '100%' }}>{'>>'}</InlineButton>
+              <InlineButton style={{ height: '100%' }}>Set Name</InlineButton>
             </HeaderInlineFormInputContainer>
           </HeaderInlineForm>
           <HeaderInlineForm id='join-room-form' onSubmit={submitRoomJoin}>
