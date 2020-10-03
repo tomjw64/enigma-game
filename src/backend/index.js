@@ -151,6 +151,8 @@ socketIO.on('connection', logIfError((socket) => {
   const cookies = cookieParse(socket.handshake.headers.cookie)
   const reconnectKey = cookies.reconnectKey
 
+  // FIXME: Having two tabs open at once gives you two players
+  // and can overwrite the saved session data of the first
   const savedSession = SAVED_SESSIONS[reconnectKey]
 
   if (savedSession != null) {
