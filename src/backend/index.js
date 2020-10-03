@@ -365,7 +365,7 @@ app.use(function (req, res, next) {
   const cookieName = 'reconnectKey'
   const cookie = req.cookies[cookieName]
   const cookieValue = cookie == null ? `reconnect_${Math.random().toString().substring(2)}` : cookie
-  res.cookie(cookieName, cookieValue, { maxAge: 3600000, httpOnly: true })
+  res.cookie(cookieName, cookieValue, { maxAge: 3600000, httpOnly: true, sameSite: true })
   next()
 })
 app.use(express.static(BUILD_DIR))
