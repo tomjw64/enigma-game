@@ -416,8 +416,8 @@ const HintHistoryTable = (props) => {
 
   const { state } = useContext(Context)
 
-  const hintHistory = state.gameState.teams[shownTeam].hintHistory
-  const cardHistory = state.gameState.teams[shownTeam].cardHistory
+  const hintHistory = state?.gameState?.teams[shownTeam]?.hintHistory || []
+  const cardHistory = state?.gameState?.teams[shownTeam]?.cardHistory || []
 
   if (hintHistory.length !== cardHistory.length + 1 && hintHistory.length !== cardHistory.length) {
     throw new Error(`Game out of sync! Hint history length: ${hintHistory.length}, Card history length: ${cardHistory.length}`)
