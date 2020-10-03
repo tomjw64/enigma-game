@@ -14,8 +14,8 @@ const COLOR = {
   BLUE_TEAM: '#2862a4',
   DARK: '#262626',
   DARK_PALE: '#363636',
-  LIGHT: '#eeeeee', 
-  ACCENT: '#fdca40',
+  LIGHT: '#eeeeee',
+  ACCENT: '#fdca40'
 }
 const TEAM_TO_COLOR = {
   [TEAM.RED]: COLOR.RED_TEAM,
@@ -37,7 +37,7 @@ const SOCKET = io()
 const ACTIONS = toEnum([
   'SET_NAME',
   'SET_JOINED_GAME',
-  'SET_GAME_STATE',
+  'SET_GAME_STATE'
 ])
 
 const Reducer = (state, action) => {
@@ -65,7 +65,7 @@ const Reducer = (state, action) => {
 const initialState = {
   username: `auto_${Math.random().toString(36).substring(2).toUpperCase()}`,
   joinedGameCode: null,
-  gameState: null,
+  gameState: null
 }
 
 const Store = withRouter(({ history, children }) => {
@@ -85,7 +85,7 @@ const Store = withRouter(({ history, children }) => {
       history.push(`/game/${gameRoomCode}`)
       dispatch({ type: 'SET_NAME', payload: username })
     })
-  }, [])
+  }, [history])
 
   return (
     <Context.Provider value={{ state, dispatch }}>
@@ -99,7 +99,7 @@ const Context = createContext(initialState)
 const App = () => {
   return (
     <BrowserRouter>
-      <div id='app' style={{position: 'relative'}}>
+      <div id='app' style={{ position: 'relative' }}>
         <Store>
           <Landing />
           <Route path='/game/:gameRoomCode' component={GameRoom} />
@@ -109,14 +109,14 @@ const App = () => {
   )
 }
 
-const GameStateDisplay = () => {
-  const { state } = useContext(Context)
-  return (
-    <div>
-      <pre>Game state: {JSON.stringify(state.gameState, null, 2)}</pre>
-    </div>
-  )
-}
+// const GameStateDisplay = () => {
+//   const { state } = useContext(Context)
+//   return (
+//     <div>
+//       <pre>Game state: {JSON.stringify(state.gameState, null, 2)}</pre>
+//     </div>
+//   )
+// }
 
 const RoleInfo = styled.div`
   display: flex;
@@ -158,9 +158,9 @@ const RoleSelectControls = () => {
     <RoleSelectControlsWrapper>
       {
         flatten([TEAM.RED, TEAM.BLUE].map(team => {
-          return [GAME_ROLE.CALLER, GAME_ROLE.RECEIVER].map(role => {
+          return [GAME_ROLE.CALLER, GAME_ROLE.RECEIVER].map((role, idx) => {
             return (
-              <RoleInfo>
+              <RoleInfo key={idx}>
                 <InlineButton onClick={handleSetRole(team, role)}>{team} {role}</InlineButton>
                 <RoleMemberList><span>{roleMembers(team, role).join(', ')}</span></RoleMemberList>
               </RoleInfo>
@@ -221,24 +221,24 @@ const GuessForm = (props) => {
 
   return (
     <>
-    <span>Guessing for {revealing} team:</span>
-    <form id='guess-form' onSubmit={submitGuess}>
-      <GuessFormInner>
-        {[0,1,2].map(i => {
-          return (
-            <HintSelector>
-            <label>Hint: {activeHint[i]}</label>
-            <select value={activeGuess[i]} onChange={handleSelect(i)}>
-              {[1,2,3,4].map(choice => {
-                return <option value={choice}>{choice}</option>
-              })}
-            </select>
-            </HintSelector>
-          )
-        })}
-      </GuessFormInner>
-      <button>Submit</button>
-    </form>
+      <span>Guessing for {revealing} team:</span>
+      <form id='guess-form' onSubmit={submitGuess}>
+        <GuessFormInner>
+          {[0, 1, 2].map(i => {
+            return (
+              <HintSelector key={i}>
+                <label>Hint: {activeHint[i]}</label>
+                <select value={activeGuess[i]} onChange={handleSelect(i)}>
+                  {[1, 2, 3, 4].map(choice => {
+                    return <option key={choice} value={choice}>{choice}</option>
+                  })}
+                </select>
+              </HintSelector>
+            )
+          })}
+        </GuessFormInner>
+        <button>Submit</button>
+      </form>
     </>
   )
 }
@@ -269,9 +269,9 @@ const TieBreakGuessForm = () => {
 
   return (
     <form id='tie-break-guess-form' onSubmit={submitTieBreakGuess}>
-      {[0,1,2,3].map(i => {
+      {[0, 1, 2, 3].map(i => {
         return (
-          <input type='text' value={tieBreakGuess[i]} onChange={handleChange(i)} />
+          <input key={i} type='text' value={tieBreakGuess[i]} onChange={handleChange(i)} />
         )
       })}
       <button>Submit</button>
@@ -301,22 +301,23 @@ const HintCreateForm = () => {
     setHints(['', '', ''])
   }
 
-
   if (myTeam === TEAM.SPECTATORS || myRole === GAME_ROLE.RECEIVER || state.gameState.teams[myTeam].activeHintSubmitted) {
     return (
       <>
         <p>Waiting for callers to create hints</p>
-        <div style={{display: 'flex'}}>
+        <div style={{ display: 'flex' }}>
           {
-            [TEAM.RED, TEAM.BLUE].map(team => {
+            [TEAM.RED, TEAM.BLUE].map((team, idx) => {
               return (
-                <div style={{
-                  margin: '0 1em',
-                  opacity: state.gameState.teams[team].activeHintSubmitted ? "0" : "1",
-                  transition: 'opacity 1s'
-                }}>
+                <div
+                  key={idx} style={{
+                    margin: '0 1em',
+                    opacity: state.gameState.teams[team].activeHintSubmitted ? '0' : '1',
+                    transition: 'opacity 1s'
+                  }}
+                >
                   <Spinner
-                    name="ball-grid-pulse"
+                    name='ball-grid-pulse'
                     color={TEAM_TO_COLOR[team]}
                   />
                 </div>
@@ -330,19 +331,19 @@ const HintCreateForm = () => {
 
   return (
     <>
-    <div id='active-card'>
-      <p style={{fontSize: '1.5rem', color: COLOR.LIGHT, margin: '0.5em'}}>
-        Code Sequence: [{state.gameState.teams[myTeam].activeCard.join(', ')}]
-      </p>
-    </div>
-    <form id='hint-create-form' onSubmit={submitCreateHints}>
-      <div>
-        <input type='text' id='hint-one-input' value={hints[0]} onChange={(event) => setHints([event.target.value, hints[1], hints[2]])} />
-        <input type='text' id='hint-two-input' value={hints[1]} onChange={(event) => setHints([hints[0], event.target.value, hints[2]])} />
-        <input type='text' id='hint-three-input' value={hints[2]} onChange={(event) => setHints([hints[0], hints[1], event.target.value])} />
+      <div id='active-card'>
+        <p style={{ fontSize: '1.5rem', color: COLOR.LIGHT, margin: '0.5em' }}>
+          Code Sequence: [{state.gameState.teams[myTeam].activeCard.join(', ')}]
+        </p>
       </div>
-      <button>Submit</button>
-    </form>
+      <form id='hint-create-form' onSubmit={submitCreateHints}>
+        <div>
+          <input type='text' id='hint-one-input' value={hints[0]} onChange={(event) => setHints([event.target.value, hints[1], hints[2]])} />
+          <input type='text' id='hint-two-input' value={hints[1]} onChange={(event) => setHints([hints[0], event.target.value, hints[2]])} />
+          <input type='text' id='hint-three-input' value={hints[2]} onChange={(event) => setHints([hints[0], hints[1], event.target.value])} />
+        </div>
+        <button>Submit</button>
+      </form>
     </>
   )
 }
@@ -355,32 +356,32 @@ const StateControls = () => {
   const otherTeam = {
     [TEAM.BLUE]: TEAM.RED,
     [TEAM.RED]: TEAM.BLUE
-  }
+  }[team]
 
   const stateSwitchInfo = {
-    [GAME_STATE.GAME_INIT]: (<TeamWords team={team}/>),
-    [GAME_STATE.CREATE_HINTS]: (<TeamWords team={team}/>),
-    [GAME_STATE.RED_REVEAL]: (<TeamWords team={TEAM.RED}/>),
-    [GAME_STATE.BLUE_REVEAL]: (<TeamWords team={TEAM.BLUE}/>),
+    [GAME_STATE.GAME_INIT]: (<TeamWordsTable team={team} />),
+    [GAME_STATE.CREATE_HINTS]: (<><TeamWordsTable team={team} /><HintHistoryTable team={team} /></>),
+    [GAME_STATE.RED_REVEAL]: ((<><TeamWordsTable team={TEAM.RED} /><HintHistoryTable team={TEAM.RED} /></>)),
+    [GAME_STATE.BLUE_REVEAL]: ((<><TeamWordsTable team={TEAM.BLUE} /><HintHistoryTable team={TEAM.BLUE} /></>)),
     [GAME_STATE.ROUND_END]: null,
     [GAME_STATE.TIE_BREAK]: ((team === TEAM.SPECTATORS || team == null)
-                            ? <><TeamWords team={TEAM.RED} /><TeamWords team={TEAM.BLUE}/></>
-                            : <TeamWords team={otherTeam[team]} />),
-    [GAME_STATE.GAME_END]: (<><TeamWords team={TEAM.RED} /><TeamWords team={TEAM.BLUE}/></>)
+      ? <><HintHistoryTable team={TEAM.RED} /><HintHistoryTable team={TEAM.BLUE} /></>
+      : <><TeamWordsTable team={otherTeam} /><HintHistoryTable team={otherTeam} /></>),
+    [GAME_STATE.GAME_END]: (<><TeamWordsTable team={TEAM.RED} /><TeamWordsTable team={TEAM.BLUE} /></>)
   }
 
   const stateSwitchAction = {
     [GAME_STATE.GAME_INIT]: (<GameInitForm />),
     [GAME_STATE.CREATE_HINTS]: (<HintCreateForm />),
-    [GAME_STATE.RED_REVEAL]: (<GuessForm revealing={TEAM.RED}/>),
-    [GAME_STATE.BLUE_REVEAL]: (<GuessForm revealing={TEAM.BLUE}/>),
+    [GAME_STATE.RED_REVEAL]: (<GuessForm revealing={TEAM.RED} />),
+    [GAME_STATE.BLUE_REVEAL]: (<GuessForm revealing={TEAM.BLUE} />),
     [GAME_STATE.ROUND_END]: null,
     [GAME_STATE.TIE_BREAK]: (<TieBreakGuessForm />),
     [GAME_STATE.GAME_END]: (<><p>Winner: {state?.gameState?.winner?.team}</p><p>Reason: {state?.gameState?.winner?.reason}</p></>)
   }
 
   return (
-    <div id='state-controls' style={{padding: '1rem'}}>
+    <div id='state-controls' style={{ padding: '1rem' }}>
       {stateSwitchInfo[state.gameState.state]}
       <CurrentActionCard>
         {stateSwitchAction[state.gameState.state]}
@@ -410,58 +411,60 @@ const TeamWordWrapper = styled.div`
   flex-wrap: wrap;
 `
 
-const TeamWords = (props) => {
+const HintHistoryTable = (props) => {
   const shownTeam = props.team
 
   const { state } = useContext(Context)
 
-  const myTeam = state.gameState.me.team
+  const hintHistory = state.gameState.teams[shownTeam].hintHistory
+  const cardHistory = state.gameState.teams[shownTeam].cardHistory
 
-  if (shownTeam === myTeam || state?.gameState?.teams[shownTeam]?.targetWords != null) {
-    return (
-      <div className='team-words-known'>
-        <TeamWordsTitle>My Team Words</TeamWordsTitle>
-        <TeamWordWrapper>
+  if (hintHistory.length !== cardHistory.length + 1 && hintHistory.length !== cardHistory.length) {
+    throw new Error(`Game out of sync! Hint history length: ${hintHistory.length}, Card history length: ${cardHistory.length}`)
+  }
+  const hintsForNumbers = {
+    1: [], 2: [], 3: [], 4: []
+  }
+  for (const [card, hint] of zip(cardHistory, hintHistory)) {
+    if (card == null || hint == null) {
+      break
+    }
+    for (const i of [0, 1, 2]) {
+      hintsForNumbers[card[i]].push(hint[i])
+    }
+  }
+
+  return (
+    <div className='team-hint-history'>
+      <TeamWordsTitle>{shownTeam} Team Past Hints</TeamWordsTitle>
+      <TeamWordWrapper>
         {
-          (state?.gameState?.teams[shownTeam]?.targetWords || ['?', '?', '?', '?']).map((word, i) => {
-            return <TeamWord>{word === '?' ? '' : `${i+1}. `}{word}</TeamWord>
+          Object.entries(hintsForNumbers).map(([key, values], idx) => {
+            return <TeamWord key={idx}>{key}: {values.length > 0 ? values.join(', ') : '?'}</TeamWord>
           })
         }
-        </TeamWordWrapper>
-      </div>
-    )
-  } else {
-    const hintHistory = state.gameState.teams[shownTeam].hintHistory
-    const cardHistory = state.gameState.teams[shownTeam].cardHistory
+      </TeamWordWrapper>
+    </div>
+  )
+}
 
-    if (hintHistory.length !== cardHistory.length + 1 && hintHistory.length !== cardHistory.length) {
-      throw new Error(`Game out of sync! Hint history length: ${hintHistory.length}, Card history length: ${cardHistory.length}`)
-    }
-    const hintsForNumbers = {
-      '1': [], '2': [], '3': [], '4': []
-    }
-    for (const [card, hint] of zip(cardHistory, hintHistory)) {
-      if (card == null || hint == null) {
-        break
-      }
-      for (const i of [0,1,2]) {
-        hintsForNumbers[card[i]].push(hint[i])
-      }
-    }
+const TeamWordsTable = (props) => {
+  const shownTeam = props.team
 
-    return (
-      <div className='team-words-unknown'>
-        <TeamWordsTitle>{shownTeam} Team Past Hints</TeamWordsTitle>
-        <TeamWordWrapper>
-          {
-            Object.entries(hintsForNumbers).map(([key, values]) => {
-              return <TeamWord>{key}: {values.length > 0 ? values.join(', ') : '?'}</TeamWord>
-            })
-          }
-        </TeamWordWrapper>
-      </div>
-    )
-  }
+  const { state } = useContext(Context)
+
+  return (
+    <div className='team-words-known'>
+      <TeamWordsTitle>{shownTeam} Team Words</TeamWordsTitle>
+      <TeamWordWrapper>
+        {
+          (state?.gameState?.teams[shownTeam]?.targetWords || ['?', '?', '?', '?']).map((word, i) => {
+            return <TeamWord key={i}>{word === '?' ? '' : `${i + 1}. `}{word}</TeamWord>
+          })
+        }
+      </TeamWordWrapper>
+    </div>
+  )
 }
 
 const ScoreboardWrapper = styled.aside`
@@ -490,16 +493,16 @@ const Scoreboard = () => {
       <ScoreboardSection>
         <ScoreboardSectionTitle>Self Codes Incorrect:</ScoreboardSectionTitle>
         {
-          [TEAM.RED, TEAM.BLUE].map(team => {
-            return <TeamColored team={team}>{state.gameState.teams[team].errorCount}</TeamColored>
+          [TEAM.RED, TEAM.BLUE].map((team, idx) => {
+            return <TeamColored key={idx} team={team}>{state.gameState.teams[team].errorCount}</TeamColored>
           })
         }
       </ScoreboardSection>
       <ScoreboardSection>
         <ScoreboardSectionTitle>Rival Codes Cracked:</ScoreboardSectionTitle>
         {
-          [TEAM.RED, TEAM.BLUE].map(team => {
-            return <TeamColored team={team}>{state.gameState.teams[team].crackedCount}</TeamColored>
+          [TEAM.RED, TEAM.BLUE].map((team, idx) => {
+            return <TeamColored key={idx} team={team}>{state.gameState.teams[team].crackedCount}</TeamColored>
           })
         }
       </ScoreboardSection>
@@ -561,7 +564,6 @@ const GameDisplay = () => {
     SOCKET.emit('create_game', state.joinedGameCode)
   }
 
-
   return (
     <GameDisplayInner id='game-display'>
       {
@@ -574,11 +576,11 @@ const GameDisplay = () => {
           )
           : (
             <>
-            <RoleSelectControls />
-            <SimpleFlexExpand>
-              <StateControls />
-            </SimpleFlexExpand>
-            <Scoreboard />
+              <RoleSelectControls />
+              <SimpleFlexExpand>
+                <StateControls />
+              </SimpleFlexExpand>
+              <Scoreboard />
             </>
           )
       }
@@ -613,15 +615,15 @@ const GameRoom = (props) => {
   const role = state?.gameState?.me?.role
   return (
     <main>
-    <GameInfo team={team}>
-      <p>Joined game: <span style={{fontWeight: 'bold'}}>{gameRoomCode}</span></p>
-      {
-        (team == null || role == null)
-        ? null
-        : (<p><span style={{fontWeight: 'bold'}}>{team === TEAM.SPECTATORS ? "SPECTATOR" : `${team} ${role}`}</span></p>)
-      }
-    </GameInfo>
-    <GameDisplay />
+      <GameInfo team={team}>
+        <p>Joined game: <span style={{ fontWeight: 'bold' }}>{gameRoomCode}</span></p>
+        {
+          (team == null || role == null)
+            ? null
+            : (<p><span style={{ fontWeight: 'bold' }}>{team === TEAM.SPECTATORS ? 'SPECTATOR' : `${team} ${role}`}</span></p>)
+        }
+      </GameInfo>
+      <GameDisplay />
     </main>
   )
 }
@@ -736,25 +738,25 @@ const Landing = withRouter(({ history }) => {
 
   return (
     <>
-    <Header className={headerHidden ? 'hide' : ''}>
-      <HeaderContents>
-        <HeaderInlineForm id='name-change-form' onSubmit={submitChangeName}>
-          <HeaderInlineFormLabel for='name-change-input'>Welcome to Enigma, Agent</HeaderInlineFormLabel>
-          <HeaderInlineFormInputContainer>
-            <HeaderInlineFormInput type='text' id='name-change-input' value={nameInputValue} onChange={(event) => setNameInputValue(event.target.value)} />
-            <InlineButton style={{height: '100%'}}>{'>>'}</InlineButton>
-          </HeaderInlineFormInputContainer>
-        </HeaderInlineForm>
-        <HeaderInlineForm id='join-room-form' onSubmit={submitRoomJoin}>
-          <HeaderInlineFormLabel for='join-room-code-input'>Join a game:</HeaderInlineFormLabel>
-          <HeaderInlineFormInputContainer>
-            <HeaderInlineFormInput type='text' id='join-room-code-input' value={gameRoomCodeValue} onChange={(event) => setGameRoomCodeValue(event.target.value)} />
-            <InlineButton style={{height: '100%'}}>Join</InlineButton>
-          </HeaderInlineFormInputContainer>
-        </HeaderInlineForm>
-      </HeaderContents>
-    </Header>
-    <HeaderToggle className={lockHeaderVisible ? '' : 'visible'} style={{backgroundColor: headerHidden ? (TEAM_TO_COLOR_CONTRAST[team] || COLOR.DARK) : COLOR.ACCENT}} onClick={(event) => setHideHeader(!hideHeader)}/>
+      <Header className={headerHidden ? 'hide' : ''}>
+        <HeaderContents>
+          <HeaderInlineForm id='name-change-form' onSubmit={submitChangeName}>
+            <HeaderInlineFormLabel for='name-change-input'>Welcome to Enigma, Agent</HeaderInlineFormLabel>
+            <HeaderInlineFormInputContainer>
+              <HeaderInlineFormInput type='text' id='name-change-input' value={nameInputValue} onChange={(event) => setNameInputValue(event.target.value)} />
+              <InlineButton style={{ height: '100%' }}>{'>>'}</InlineButton>
+            </HeaderInlineFormInputContainer>
+          </HeaderInlineForm>
+          <HeaderInlineForm id='join-room-form' onSubmit={submitRoomJoin}>
+            <HeaderInlineFormLabel for='join-room-code-input'>Join a game:</HeaderInlineFormLabel>
+            <HeaderInlineFormInputContainer>
+              <HeaderInlineFormInput type='text' id='join-room-code-input' value={gameRoomCodeValue} onChange={(event) => setGameRoomCodeValue(event.target.value)} />
+              <InlineButton style={{ height: '100%' }}>Join</InlineButton>
+            </HeaderInlineFormInputContainer>
+          </HeaderInlineForm>
+        </HeaderContents>
+      </Header>
+      <HeaderToggle className={lockHeaderVisible ? '' : 'visible'} style={{ backgroundColor: headerHidden ? (TEAM_TO_COLOR_CONTRAST[team] || COLOR.DARK) : COLOR.ACCENT }} onClick={(event) => setHideHeader(!hideHeader)} />
     </>
   )
 })

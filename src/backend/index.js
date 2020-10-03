@@ -1,11 +1,11 @@
 const fs = require('fs')
 const path = require('path')
-const assert = require('assert').strict;
+const assert = require('assert').strict
 
 const express = require('express')
 const app = express()
 const cookieParser = require('cookie-parser')
-const { parse: cookieParse } = require('cookie');
+const { parse: cookieParse } = require('cookie')
 const http = require('http').createServer(app)
 const socketIO = require('socket.io')(http)
 
@@ -30,7 +30,6 @@ const usernameOf = (socket) => CONNECTED_USERS[socket.id]?.username
 const currentGameCode = (socket) => CONNECTED_USERS[socket.id]?.gameRoomCode
 const currentGame = (socket) => gameFromRoomCode(currentGameCode(socket))
 const gameFromRoomCode = (roomCode) => GAMES[roomCode]
-
 
 const leaveCurrentGame = (socket) => {
   const currentGameRoomCode = currentGameCode(socket)
@@ -68,7 +67,7 @@ const emitUpdateGame = (gameRoomCode) => {
       }
     }
   })
-  console.log(`issued update`)
+  console.log('issued update')
 }
 
 const dbgSocket = (socket) => `(${socket.id}:${usernameOf(socket)})`
@@ -91,7 +90,7 @@ const logIfError = (func) => {
     try {
       func(...args)
     } catch (error) {
-      console.error(error.stack);
+      console.error(error.stack)
     }
   }
 }
@@ -136,16 +135,16 @@ const tryAssumeSession = (socket, session) => {
     // May have been rejected because caller position now taken
     const assumeReceiverSuccess = game.makeRole(team, GAME_ROLE.RECEIVER, socket.id)
     if (!assumeReceiverSuccess) {
-      throw new Error(`User should have been able to assume session but was not able to join any role`)
+      throw new Error('User should have been able to assume session but was not able to join any role')
     }
   }
   return true
 }
 
 socketIO.on('connection', logIfError((socket) => {
-  ///////////////////
+  /// ////////////////
   // ADMININISTRATIVE
-  ///////////////////
+  /// ////////////////
   console.log('a user connected')
   CONNECTED_USERS[socket.id] = { username: socket.id, gameRoomCode: null }
   const socketLeaveGame = socketLeaveGameAction(socket)
@@ -166,9 +165,8 @@ socketIO.on('connection', logIfError((socket) => {
     }
   }
 
-
-  socket.on('disconnect', logIfError(() => {  
-    const gameRoomCode = currentGameCode(socket)  
+  socket.on('disconnect', logIfError(() => {
+    const gameRoomCode = currentGameCode(socket)
     const game = currentGame(socket)
 
     if (reconnectKey == null || game == null) {
@@ -186,7 +184,7 @@ socketIO.on('connection', logIfError((socket) => {
     SAVED_SESSIONS[reconnectKey] = { team, role, gameRoomCode, socket, instanceNo: instanceNo }
     setTimeout(() => {
       // if (CONNECTED_USERS[socket.id]?.reconnectCount === previousReconnectCount) {
-        // User has not reconnected
+      // User has not reconnected
       socketLeaveGame()
       console.log(`user ${dbgSocket(socket)} data being wiped`)
       delete CONNECTED_USERS[socket.id]
@@ -217,7 +215,7 @@ socketIO.on('connection', logIfError((socket) => {
     socket.join(socketRoom)
     console.log(`user ${dbgSocket(socket)} joined room: ${socketRoom}`)
     CONNECTED_USERS[socket.id].gameRoomCode = gameRoomCode
-    
+
     if (existingGame != null) {
       existingGame.makeReceiver(TEAM.SPECTATORS, socket.id)
     }
@@ -242,9 +240,9 @@ socketIO.on('connection', logIfError((socket) => {
     emitUpdateGame(currentGameCode(socket))
   }))
 
-  /////////////////
+  /// //////////////
   // IN GAME EVENTS
-  /////////////////
+  /// //////////////
   socket.on('start_game', logIfError(() => {
     const game = currentGame(socket)
     assert.equal(game.getState(), GAME_STATE.GAME_INIT)
@@ -283,11 +281,11 @@ socketIO.on('connection', logIfError((socket) => {
 
     const team = game.getTeam(socket.id)
     const role = game.getRole(socket.id)
-    
+
     if (role === GAME_ROLE.CALLER) {
-      if ((team === TEAM.RED && game.getState() === GAME_STATE.RED_REVEAL)
-          || (team == TEAM.BLUE && game.getState() === GAME_STATE.BLUE_REVEAL)) {
-        console.log(`player without permission to change guess tried to change guess`)
+      if ((team === TEAM.RED && game.getState() === GAME_STATE.RED_REVEAL) ||
+          (team === TEAM.BLUE && game.getState() === GAME_STATE.BLUE_REVEAL)) {
+        console.log('player without permission to change guess tried to change guess')
       }
     }
 
@@ -309,11 +307,11 @@ socketIO.on('connection', logIfError((socket) => {
 
     const team = game.getTeam(socket.id)
     const role = game.getRole(socket.id)
-    
+
     if (role === GAME_ROLE.CALLER) {
-      if ((team === TEAM.RED && game.getState() === GAME_STATE.RED_REVEAL)
-          || (team == TEAM.BLUE && game.getState() === GAME_STATE.BLUE_REVEAL)) {
-        console.log(`player without permission to submit guess tried to submit guess`)
+      if ((team === TEAM.RED && game.getState() === GAME_STATE.RED_REVEAL) ||
+          (team === TEAM.BLUE && game.getState() === GAME_STATE.BLUE_REVEAL)) {
+        console.log('player without permission to submit guess tried to submit guess')
       }
     }
 
@@ -337,7 +335,6 @@ socketIO.on('connection', logIfError((socket) => {
     game.setTieBreakGuess(team, data)
 
     emitUpdateGame(currentGameCode(socket))
-
   }))
 
   socket.on('tiebreak_submit', logIfError(() => {
