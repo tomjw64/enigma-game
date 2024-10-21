@@ -8,11 +8,11 @@
     "cookie-parser": "^1.4.7",
     "express": "^4.21.1",
     "lodash": "^4.17.20",
-    "natural": "^2.1.5",
+    "natural": "^2.4.5",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-router-dom": "^5.2.0",
-    "react-scripts": "^3.4.3",
+    "react-scripts": "^5.0.1",
     "react-spinkit": "^3.0.0",
     "socket.io": "^4.8.0",
     "socket.io-client": "^2.3.0",
@@ -51,7 +51,7 @@
     ]
   },
   "devDependencies": {
-    "@babel/cli": "^7.10.1",
+    "@babel/cli": "^7.25.7",
     "@babel/core": "^7.10.2",
     "@babel/preset-env": "^7.10.2",
     "@testing-library/jest-dom": "^4.2.4",
